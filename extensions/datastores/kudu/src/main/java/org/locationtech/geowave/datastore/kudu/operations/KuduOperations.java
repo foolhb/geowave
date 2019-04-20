@@ -13,6 +13,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Schema;
+import org.apache.kudu.client.AsyncKuduClient;
+import org.apache.kudu.client.AsyncKuduScanner.AsyncKuduScannerBuilder;
 import org.apache.kudu.client.CreateTableOptions;
 import org.apache.kudu.client.Delete;
 import org.apache.kudu.client.KuduClient;
@@ -50,6 +52,7 @@ import org.locationtech.geowave.datastore.kudu.PersistentKuduRow;
 import org.locationtech.geowave.datastore.kudu.KuduMetadataRow;
 import org.locationtech.geowave.datastore.kudu.config.KuduRequiredOptions;
 import org.locationtech.geowave.datastore.kudu.util.ClientPool;
+import org.locationtech.geowave.datastore.kudu.util.AsyncClientPool;
 import org.locationtech.geowave.datastore.kudu.util.KuduUtils;
 import org.locationtech.geowave.mapreduce.MapReduceDataStoreOperations;
 import org.locationtech.geowave.mapreduce.splits.RecordReaderParams;
@@ -74,6 +77,7 @@ public class KuduOperations implements MapReduceDataStoreOperations {
   protected final KuduRequiredOptions options;
 
   private final KuduClient client;
+  private final AsyncKuduClient asyncClient;
   private final Object CREATE_TABLE_MUTEX = new Object();
 
   public KuduOperations(final KuduRequiredOptions options) {
@@ -84,6 +88,7 @@ public class KuduOperations implements MapReduceDataStoreOperations {
     }
     this.options = options;
     client = ClientPool.getInstance().getClient(options.getKuduMaster());
+    asyncClient = AsyncClientPool.getInstance().getClient(options.getKuduMaster());
   }
 
   @Override
@@ -300,6 +305,10 @@ public class KuduOperations implements MapReduceDataStoreOperations {
 
   public KuduScannerBuilder getScannerBuilder(KuduTable table) {
     return client.newScannerBuilder(table);
+  }
+
+  public AsyncKuduScannerBuilder getAsyncScannerBuilder(KuduTable table) {
+    return asyncClient.newScannerBuilder(table);
   }
 
   public KuduTable getTable(String tableName) throws KuduException {
