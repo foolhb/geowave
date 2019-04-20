@@ -203,7 +203,8 @@ public class KuduRangeRead<T> {
       public void close() throws IOException {
         synchronized (scanners) {
           for (final AsyncKuduScanner scanner : scanners) {
-            scanner.close();
+            if (!scanner.isClosed())
+              scanner.close();
           }
         }
       }
