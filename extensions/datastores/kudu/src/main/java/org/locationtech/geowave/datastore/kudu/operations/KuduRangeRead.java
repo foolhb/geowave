@@ -204,8 +204,8 @@ public class KuduRangeRead<T> {
         synchronized (scanners) {
           for (final AsyncKuduScanner scanner : scanners) {
             if (!scanner.isClosed()){
-              while (scanner.hasMoreRows())
-                scanner.nextRows();
+//              while (scanner.hasMoreRows())
+//                scanner.nextRows();
               scanner.close();
             }
           }
@@ -228,6 +228,7 @@ public class KuduRangeRead<T> {
       final short[] adapterIds) {
     // callback class
     class QueryCallback implements Callback<Deferred<Integer>, RowResultIterator> {
+      @Override
       public Deferred<Integer> call(RowResultIterator rs) {
         Iterator<GeoWaveRow> tmpIterator;
 

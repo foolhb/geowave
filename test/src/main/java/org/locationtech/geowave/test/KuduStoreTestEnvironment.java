@@ -66,8 +66,8 @@ public class KuduStoreTestEnvironment extends StoreTestEnvironment {
   @Override
   protected void initOptions(StoreFactoryOptions options) {
     KuduRequiredOptions kuduOptions = (KuduRequiredOptions) options;
-//    kuduOptions.setKuduMaster("127.0.0.1:7051");
-    kuduOptions.setKuduMaster("http://kudu.dannyqiu.me:8050");
+    kuduOptions.setKuduMaster("127.0.0.1:7051");
+//    kuduOptions.setKuduMaster("kudu.dannyqiu.me:8051");
   }
 
   @Override
