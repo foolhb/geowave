@@ -31,14 +31,15 @@ public class GeoWaveBasicSpatialTemporalVectorIT extends AbstractGeoWaveBasicVec
 
   @GeoWaveTestStore(
       value = {
-          GeoWaveStoreType.ACCUMULO,
-          GeoWaveStoreType.BIGTABLE,
-          GeoWaveStoreType.CASSANDRA,
-          GeoWaveStoreType.DYNAMODB,
-          GeoWaveStoreType.HBASE,
+//          GeoWaveStoreType.ACCUMULO,
+//          GeoWaveStoreType.BIGTABLE,
+//          GeoWaveStoreType.CASSANDRA,
+//          GeoWaveStoreType.DYNAMODB,
+//          GeoWaveStoreType.HBASE,
           GeoWaveStoreType.KUDU,
-          GeoWaveStoreType.REDIS,
-          GeoWaveStoreType.ROCKSDB})
+//          GeoWaveStoreType.REDIS,
+//          GeoWaveStoreType.ROCKSDB
+      })
   protected DataStorePluginOptions dataStore;
 
   private static long startMillis;

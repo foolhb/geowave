@@ -60,13 +60,14 @@ import com.aol.cyclops.util.function.QuadConsumer;
 public class GeoWaveVisibilityIT extends AbstractGeoWaveIT {
   @GeoWaveTestStore(
       value = {
-          GeoWaveStoreType.ACCUMULO,
-          GeoWaveStoreType.CASSANDRA,
-          GeoWaveStoreType.HBASE,
-          GeoWaveStoreType.DYNAMODB,
+//          GeoWaveStoreType.ACCUMULO,
+//          GeoWaveStoreType.CASSANDRA,
+//          GeoWaveStoreType.HBASE,
+//          GeoWaveStoreType.DYNAMODB,
           GeoWaveStoreType.KUDU,
-          GeoWaveStoreType.REDIS,
-          GeoWaveStoreType.ROCKSDB},
+//          GeoWaveStoreType.REDIS,
+//          GeoWaveStoreType.ROCKSDB
+      },
       options = {"enableVisibility=true", "enableSecondaryIndexing=false"})
   protected DataStorePluginOptions dataStoreOptions;
 
