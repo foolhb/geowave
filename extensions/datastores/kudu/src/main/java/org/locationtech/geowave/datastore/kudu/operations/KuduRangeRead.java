@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import org.apache.kudu.Schema;
@@ -160,6 +161,7 @@ public class KuduRangeRead<T> {
 
   public CloseableIterator<T> executeQueryAsync(final AsyncKuduScanner... scanners) {
     final BlockingQueue<Object> results = new LinkedBlockingQueue<>(MAX_BOUNDED_READS_ENQUEUED);
+    final AtomicBoolean isCanceled = new AtomicBoolean();
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -172,6 +174,7 @@ public class KuduRangeRead<T> {
                 readSemaphore,
                 results,
                 queryCount,
+                isCanceled,
                 dataIds,
                 isDataIndex,
                 visibilityEnabled,
@@ -198,7 +201,11 @@ public class KuduRangeRead<T> {
         }
       }
     }, "Kudu Query Executor").start();
-    return new CloseableIteratorWrapper<T>(() -> {
+    return new CloseableIteratorWrapper<T>(new Closeable() {
+      @Override
+      public void close() throws IOException {
+        isCanceled.set(true);
+      }
     }, new RowConsumer(results));
   }
 
@@ -207,6 +214,7 @@ public class KuduRangeRead<T> {
       final Semaphore semaphore,
       final BlockingQueue<Object> resultQueue,
       final AtomicInteger queryCount,
+      final AtomicBoolean isCanceled,
       final byte[][] dataIds,
       final boolean isDataIndex,
       final boolean visibilityEnabled,
@@ -219,7 +227,7 @@ public class KuduRangeRead<T> {
       public Deferred<Integer> call(RowResultIterator rs) {
         Iterator<GeoWaveRow> tmpIterator;
 
-        if (rs == null) {
+        if (rs == null || isCanceled.get()) {
           checkFinalize();
           return Deferred.fromResult(0);
         }
@@ -294,6 +302,7 @@ public class KuduRangeRead<T> {
       }
 
       private void checkFinalize() {
+        scanner.close();
         semaphore.release();
         if (queryCount.decrementAndGet() <= 0) {
           try {
