@@ -77,7 +77,7 @@ public class KuduOperations implements MapReduceDataStoreOperations {
   protected final KuduRequiredOptions options;
 
   private final KuduClient client;
-  private final AsyncKuduClient asyncClient;
+  private AsyncKuduClient asyncClient;
   private final Object CREATE_TABLE_MUTEX = new Object();
 
   public KuduOperations(final KuduRequiredOptions options) {
@@ -308,6 +308,7 @@ public class KuduOperations implements MapReduceDataStoreOperations {
   }
 
   public AsyncKuduScannerBuilder getAsyncScannerBuilder(KuduTable table) {
+    asyncClient =  new AsyncKuduClient.AsyncKuduClientBuilder(options.getKuduMaster()).build();
     return asyncClient.newScannerBuilder(table);
   }
 
