@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import org.apache.kudu.Schema;
+import org.apache.kudu.client.AsyncKuduClient;
 import org.apache.kudu.client.AsyncKuduScanner;
 import org.apache.kudu.client.AsyncKuduScanner.AsyncKuduScannerBuilder;
 import org.apache.kudu.client.KuduPredicate;
@@ -58,6 +59,8 @@ public class KuduRangeRead<T> {
   private final Predicate<GeoWaveRow> filter;
   private final GeoWaveRowIteratorTransformer<T> rowTransformer;
   private final boolean rowMerging;
+  private AsyncKuduClient client;
+  private boolean clientClosed;
 
   // only allow so many outstanding async reads or writes, use this semaphore
   // to control it
@@ -85,10 +88,13 @@ public class KuduRangeRead<T> {
     this.filter = filter;
     this.rowTransformer = rowTransformer;
     this.rowMerging = rowMerging;
+    // this.client = operations.getAsyncClient();
+    this.clientClosed = false;
   }
 
   public CloseableIterator<T> results() {
     final List<AsyncKuduScanner> scanners = new ArrayList<>();
+    this.client = operations.getAsyncClient();
     Iterator<GeoWaveRow> tmpIterator;
     for (final short adapterId : adapterIds) {
       KuduPredicate adapterIdPred =
@@ -129,8 +135,7 @@ public class KuduRangeRead<T> {
                     schema.getColumn(KuduField.GW_PARTITION_ID_KEY.getFieldName()),
                     ComparisonOp.EQUAL,
                     partitionKey);
-
-            AsyncKuduScannerBuilder scannerBuilder = operations.getAsyncScannerBuilder(table);
+            AsyncKuduScannerBuilder scannerBuilder = client.newScannerBuilder(table);
             AsyncKuduScanner scanner =
                 scannerBuilder.addPredicate(lowerPred).addPredicate(upperPred).addPredicate(
                     partitionPred).addPredicate(adapterIdPred).build();
@@ -144,13 +149,13 @@ public class KuduRangeRead<T> {
                   schema.getColumn(KuduField.GW_PARTITION_ID_KEY.getFieldName()),
                   ComparisonOp.EQUAL,
                   dataId);
-          AsyncKuduScannerBuilder scannerBuilder = operations.getAsyncScannerBuilder(table);
+          AsyncKuduScannerBuilder scannerBuilder = client.newScannerBuilder(table);
           AsyncKuduScanner scanner =
               scannerBuilder.addPredicate(partitionPred).addPredicate(adapterIdPred).build();
           scanners.add(scanner);
         }
       } else {
-        AsyncKuduScannerBuilder scannerBuilder = operations.getAsyncScannerBuilder(table);
+        AsyncKuduScannerBuilder scannerBuilder = client.newScannerBuilder(table);
         AsyncKuduScanner scanner = scannerBuilder.addPredicate(adapterIdPred).build();
         scanners.add(scanner);
       }
@@ -205,13 +210,18 @@ public class KuduRangeRead<T> {
       @Override
       public void close() throws IOException {
         isCanceled.set(true);
-        operations.shutClientDown();
+        try {
+          Thread.sleep(10000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        try{
         for(AsyncKuduScanner scanner:scanners){
           if(!scanner.isClosed())
             scanner.close();
         }
-      }
-    }, new RowConsumer(results));
+      } catch (Exception e){}
+    }}, new RowConsumer(results));
   }
 
   public Deferred<Integer> executeScanner(

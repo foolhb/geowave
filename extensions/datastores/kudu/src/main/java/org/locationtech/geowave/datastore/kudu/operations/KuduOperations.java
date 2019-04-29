@@ -80,6 +80,8 @@ public class KuduOperations implements MapReduceDataStoreOperations {
   private AsyncKuduClient asyncClient;
   private final Object CREATE_TABLE_MUTEX = new Object();
 
+  private boolean clientClosed = false;
+
   public KuduOperations(final KuduRequiredOptions options) {
     if ((options.getGeoWaveNamespace() == null) || options.getGeoWaveNamespace().equals("")) {
       gwNamespace = "geowave";
@@ -88,7 +90,7 @@ public class KuduOperations implements MapReduceDataStoreOperations {
     }
     this.options = options;
     client = ClientPool.getInstance().getClient(options.getKuduMaster());
-    asyncClient = AsyncClientPool.getInstance().getClient(options.getKuduMaster());
+    asyncClient =  new AsyncKuduClient.AsyncKuduClientBuilder(options.getKuduMaster()).build();
   }
 
   @Override
@@ -307,13 +309,24 @@ public class KuduOperations implements MapReduceDataStoreOperations {
     return client.newScannerBuilder(table);
   }
 
+  public AsyncKuduClient getAsyncClient(){
+    if(clientClosed)
+      asyncClient =  new AsyncKuduClient.AsyncKuduClientBuilder(options.getKuduMaster()).build();
+    return asyncClient;
+  }
+
   public AsyncKuduScannerBuilder getAsyncScannerBuilder(KuduTable table) {
     asyncClient =  new AsyncKuduClient.AsyncKuduClientBuilder(options.getKuduMaster()).build();
     return asyncClient.newScannerBuilder(table);
   }
 
   public void shutClientDown(){
-    asyncClient.shutdown();
+    try {
+      asyncClient.close();
+      clientClosed = true;
+    } catch (Exception e) {
+//      e.printStackTrace();
+    }
   }
 
   public KuduTable getTable(String tableName) throws KuduException {
