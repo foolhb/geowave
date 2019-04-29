@@ -205,6 +205,11 @@ public class KuduRangeRead<T> {
       @Override
       public void close() throws IOException {
         isCanceled.set(true);
+        operations.shutClientDown();
+        for(AsyncKuduScanner scanner:scanners){
+          if(!scanner.isClosed())
+            scanner.close();
+        }
       }
     }, new RowConsumer(results));
   }

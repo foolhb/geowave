@@ -311,6 +311,10 @@ public class KuduOperations implements MapReduceDataStoreOperations {
     return asyncClient.newScannerBuilder(table);
   }
 
+  public void shutClientDown(){
+    asyncClient.shutdown();
+  }
+
   public KuduTable getTable(String tableName) throws KuduException {
     return client.openTable(getKuduQualifiedName(tableName));
   }
